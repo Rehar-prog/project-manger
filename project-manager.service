@@ -1,0 +1,16 @@
+[Unit]
+Description=Project Control Dashboard
+After=network.target
+
+[Service]
+Type=simple
+User=YOUR_USERNAME
+WorkingDirectory=YOUR_PROJECT_PATH
+ExecStart=/usr/bin/python3 YOUR_PROJECT_PATH/app.py
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

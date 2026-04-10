@@ -1,0 +1,282 @@
+{% extends "base.html" %}
+
+{% block title %}System Dashboard - Project Control Dashboard{% endblock %}
+{% block page_title %}System Dashboard{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <!-- System Overview Cards -->
+    <div class="col-12">
+        <div class="row g-3">
+            <!-- CPU -->
+            <div class="col-6 col-lg-3">
+                <div class="metric-card">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <small class="text-muted text-uppercase">CPU Usage</small>
+                            <h3 class="mb-0 mt-1" id="cpu-value">--%</h3>
+                        </div>
+                        <div class="metric-icon bg-primary">
+                            <i class="bi bi-cpu"></i>
+                        </div>
+                    </div>
+                    <div class="progress mt-3" style="height: 6px;">
+                        <div class="progress-bar" id="cpu-progress" role="progressbar" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Memory -->
+            <div class="col-6 col-lg-3">
+                <div class="metric-card">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <small class="text-muted text-uppercase">Memory</small>
+                            <h3 class="mb-0 mt-1" id="memory-value">--%</h3>
+                            <small class="text-muted" id="memory-detail">-- / -- GB</small>
+                        </div>
+                        <div class="metric-icon bg-success">
+                            <i class="bi bi-memory"></i>
+                        </div>
+                    </div>
+                    <div class="progress mt-2" style="height: 6px;">
+                        <div class="progress-bar bg-success" id="memory-progress" role="progressbar" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Disk -->
+            <div class="col-6 col-lg-3">
+                <div class="metric-card">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <small class="text-muted text-uppercase">Disk</small>
+                            <h3 class="mb-0 mt-1" id="disk-value">--%</h3>
+                            <small class="text-muted" id="disk-detail">-- / -- GB</small>
+                        </div>
+                        <div class="metric-icon bg-info">
+                            <i class="bi bi-hdd-fill"></i>
+                        </div>
+                    </div>
+                    <div class="progress mt-2" style="height: 6px;">
+                        <div class="progress-bar bg-info" id="disk-progress" role="progressbar" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Uptime -->
+            <div class="col-6 col-lg-3">
+                <div class="metric-card">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <small class="text-muted text-uppercase">Manager Uptime</small>
+                            <h3 class="mb-0 mt-1" id="uptime-value">--</h3>
+                        </div>
+                        <div class="metric-icon bg-warning">
+                            <i class="bi bi-clock-history"></i>
+                        </div>
+                    </div>
+                    <small class="text-muted d-block mt-3" id="uptime-detail">Since --</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Charts Row -->
+    <div class="col-12">
+        <div class="row g-3">
+            <!-- CPU History Chart -->
+            <div class="col-lg-6">
+                <div class="card chart-card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0"><i class="bi bi-cpu me-2"></i>CPU Usage History</h6>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="cpuChart" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Memory History Chart -->
+            <div class="col-lg-6">
+                <div class="card chart-card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0"><i class="bi bi-memory me-2"></i>Memory Usage History</h6>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="memoryChart" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Project Status Charts -->
+    <div class="col-12">
+        <div class="row g-3">
+            <!-- Project Status Distribution -->
+            <div class="col-md-6 col-lg-4">
+                <div class="card chart-card">
+                    <div class="card-header">
+                        <h6 class="mb-0"><i class="bi bi-pie-chart me-2"></i>Project Status</h6>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="projectsChart" height="250"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Project Mode Distribution -->
+            <div class="col-md-6 col-lg-4">
+                <div class="card chart-card">
+                    <div class="card-header">
+                        <h6 class="mb-0"><i class="bi bi-lightning me-2"></i>Auto vs Manual</h6>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="modeChart" height="250"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Project Summary Bar Chart -->
+            <div class="col-lg-4">
+                <div class="card chart-card">
+                    <div class="card-header">
+                        <h6 class="mb-0"><i class="bi bi-bar-chart me-2"></i>Project Overview</h6>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="overviewChart" height="250"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Project Stats Summary -->
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-kanban me-2"></i>Projects Summary</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-4">
+                    <div class="col-6 col-sm-4 col-md-2">
+                        <div class="text-center">
+                            <div class="display-6 fw-bold text-primary" id="dash-total">0</div>
+                            <small class="text-muted">Total</small>
+                        </div>
+                    </div>
+                    <div class="col-6 col-sm-4 col-md-2">
+                        <div class="text-center">
+                            <div class="display-6 fw-bold text-success" id="dash-running">0</div>
+                            <small class="text-muted">Running</small>
+                        </div>
+                    </div>
+                    <div class="col-6 col-sm-4 col-md-2">
+                        <div class="text-center">
+                            <div class="display-6 fw-bold text-secondary" id="dash-stopped">0</div>
+                            <small class="text-muted">Stopped</small>
+                        </div>
+                    </div>
+                    <div class="col-6 col-sm-4 col-md-2">
+                        <div class="text-center">
+                            <div class="display-6 fw-bold text-warning" id="dash-crashed">0</div>
+                            <small class="text-muted">Crashed</small>
+                        </div>
+                    </div>
+                    <div class="col-6 col-sm-4 col-md-2">
+                        <div class="text-center">
+                            <div class="display-6 fw-bold text-info" id="dash-auto">0</div>
+                            <small class="text-muted">Auto Mode</small>
+                        </div>
+                    </div>
+                    <div class="col-6 col-sm-4 col-md-2">
+                        <div class="text-center">
+                            <div class="display-6 fw-bold text-dark" id="dash-manual">0</div>
+                            <small class="text-muted">Manual Mode</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Running Processes Table -->
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-activity me-2"></i>Running Services</h5>
+                <span class="badge bg-primary" id="process-count">0 services</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Project</th>
+                                <th>Service</th>
+                                <th>PID</th>
+                                <th>Status</th>
+                                <th>Uptime</th>
+                                <th>CPU</th>
+                                <th>Memory</th>
+                            </tr>
+                        </thead>
+                        <tbody id="processes-table-body">
+                            <tr>
+                                <td colspan="7" class="text-center text-muted py-4">
+                                    <i class="bi bi-inbox fs-4 d-block mb-2"></i>
+                                    No running services
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- System Info -->
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>System Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <table class="table table-borderless table-sm">
+                            <tbody>
+                                <tr>
+                                    <td class="text-muted">Platform</td>
+                                    <td class="text-end" id="sys-platform">--</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">Total Memory</td>
+                                    <td class="text-end" id="sys-memory">--</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">Total Disk</td>
+                                    <td class="text-end" id="sys-disk">--</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="alert alert-info">
+                            <i class="bi bi-lightbulb me-2"></i>
+                            <strong>Tip:</strong> System metrics are refreshed every few seconds. 
+                            Charts show the last 60 data points of CPU and memory usage.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,318 @@
+{% extends "base.html" %}
+
+{% block title %}Projects - Project Control Dashboard{% endblock %}
+{% block page_title %}Projects{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <!-- Stats Row -->
+    <div class="col-12">
+        <div class="row g-3">
+            <div class="col-6 col-md-3">
+                <div class="stat-card">
+                    <div class="stat-icon bg-primary">
+                        <i class="bi bi-folder-fill"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h4 id="stat-total">0</h4>
+                        <span>Total Projects</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="stat-card">
+                    <div class="stat-icon bg-success">
+                        <i class="bi bi-play-circle-fill"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h4 id="stat-running">0</h4>
+                        <span>Running</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="stat-card">
+                    <div class="stat-icon bg-secondary">
+                        <i class="bi bi-pause-circle-fill"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h4 id="stat-stopped">0</h4>
+                        <span>Stopped</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="stat-card">
+                    <div class="stat-icon bg-warning">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h4 id="stat-crashed">0</h4>
+                        <span>Crashed</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Add Project & Filter -->
+    <div class="col-12">
+        <div class="d-flex flex-wrap gap-3 align-items-center justify-content-between">
+            <div class="d-flex gap-2 flex-grow-1" style="max-width: 400px;">
+                <div class="input-group search-box">
+                    <span class="input-group-text">
+                        <i class="bi bi-search"></i>
+                    </span>
+                    <input type="text" id="search-input" class="form-control" 
+                           placeholder="Search projects...">
+                </div>
+            </div>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addProjectModal">
+                <i class="bi bi-plus-lg me-2"></i>Add Project
+            </button>
+        </div>
+    </div>
+    
+    <!-- Filter Tabs - REMOVED Manual Mode tab -->
+    <div class="col-12">
+        <ul class="nav nav-pills">
+            <li class="nav-item">
+                <a class="nav-link active" href="#" data-filter="all">All</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#" data-filter="running">Running</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#" data-filter="stopped">Stopped</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#" data-filter="crashed">Crashed</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#" data-filter="auto">Auto Mode</a>
+            </li>
+        </ul>
+    </div>
+    
+    <!-- Projects Grid -->
+    <div class="col-12">
+        <div id="projects-grid" class="row g-3">
+            <!-- Projects will be loaded here -->
+            <div class="col-12 text-center py-5">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2 text-muted">Loading projects...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Project Modal -->
+<div class="modal fade" id="addProjectModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-plus-circle me-2"></i>Add New Project
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="add-project-form">
+                    <div class="mb-3">
+                        <label class="form-label">Project Name</label>
+                        <input type="text" class="form-control" 
+                               id="project-name" placeholder="My Project" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Directory</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" 
+                                   id="project-dir" placeholder="C:\path\to\project" required>
+                            <button type="button" class="btn btn-outline-secondary" id="browse-btn" title="Paste path from clipboard">
+                                <i class="bi bi-clipboard"></i>
+                            </button>
+                        </div>
+                        <div class="form-text">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Copy path from File Explorer and paste here, or type manually
+                        </div>
+                        <div class="invalid-feedback" id="dir-error"></div>
+                    </div>
+                    
+                    <!-- Services Section -->
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <label class="form-label mb-0">Services</label>
+                            <button type="button" class="btn btn-sm btn-outline-primary" id="add-service-btn">
+                                <i class="bi bi-plus-lg me-1"></i>Add Service
+                            </button>
+                        </div>
+                        <div id="services-container">
+                            <div class="service-row card mb-2" data-service-index="0">
+                                <div class="card-body py-2 px-3">
+                                    <div class="row g-2">
+                                        <div class="col-md-3">
+                                            <input type="text" class="form-control form-control-sm service-name" 
+                                                   placeholder="Service name" value="Main" required>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <input type="text" class="form-control form-control-sm service-cmd font-monospace" 
+                                                   placeholder="Command (e.g., python app.py)" required>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <input type="text" class="form-control form-control-sm service-dir font-monospace" 
+                                                   placeholder="Directory (optional)">
+                                        </div>
+                                        <div class="col-md-2">
+                                            <input type="text" class="form-control form-control-sm service-stop-cmd font-monospace" 
+                                                   placeholder="Stop cmd (optional)">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-text">
+                            Add one or more services/commands to run for this project
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Mode</label>
+                        <div class="d-flex gap-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="project-mode" 
+                                       id="mode-manual" value="manual" checked>
+                                <label class="form-check-label" for="mode-manual">
+                                    <i class="bi bi-hand-index-thumb me-1"></i>Manual
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="project-mode" 
+                                       id="mode-auto" value="auto">
+                                <label class="form-check-label" for="mode-auto">
+                                    <i class="bi bi-lightning-fill me-1"></i>Auto
+                                    <span class="badge bg-info ms-1">Auto-start</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="save-project-btn">
+                    <i class="bi bi-check-lg me-2"></i>Create Project
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Project Modal -->
+<div class="modal fade" id="editProjectModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-pencil-square me-2"></i>Edit Project
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="edit-project-form">
+                    <input type="hidden" id="edit-project-id">
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Project Name</label>
+                        <input type="text" class="form-control" 
+                               id="edit-project-name" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Directory</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" 
+                                   id="edit-project-dir" required>
+                            <button type="button" class="btn btn-outline-secondary" id="edit-browse-btn">
+                                <i class="bi bi-clipboard"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Edit Services Section -->
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <label class="form-label mb-0">Services</label>
+                            <button type="button" class="btn btn-sm btn-outline-primary" id="edit-add-service-btn">
+                                <i class="bi bi-plus-lg me-1"></i>Add Service
+                            </button>
+                        </div>
+                        <div id="edit-services-container">
+                            <!-- Services will be loaded here -->
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="update-project-btn">
+                    <i class="bi bi-check-lg me-2"></i>Save Changes
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title text-danger">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>Delete Project
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete <strong id="delete-project-name"></strong>?</p>
+                <p class="text-muted small">This action cannot be undone. The project will be stopped if running.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirm-delete-btn">
+                    <i class="bi bi-trash me-2"></i>Delete
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Services Modal for Multi-Service Projects -->
+<div class="modal fade" id="servicesModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-layers me-2"></i>Project Services
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="services-list">
+                    <!-- Services will be loaded here -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/projects.js') }}"></script>
+{% endblock %}

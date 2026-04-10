@@ -1,0 +1,339 @@
+{% extends "base.html" %}
+
+{% block title %}Settings - Project Control Dashboard{% endblock %}
+{% block page_title %}Settings{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <!-- Appearance Section -->
+    <div class="col-12 col-lg-6">
+        <div class="card settings-card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-palette me-2"></i>Appearance
+                </h5>
+            </div>
+            <div class="card-body">
+                <!-- Theme Selection -->
+                <div class="mb-4">
+                    <label class="form-label h6">Theme</label>
+                    <div class="d-flex gap-3">
+                        <div class="theme-option" data-theme="dark">
+                            <input type="radio" name="theme" id="theme-dark" value="dark" class="d-none" 
+                                   {% if theme == 'dark' %}checked{% endif %}>
+                            <label for="theme-dark" class="theme-label">
+                                <div class="theme-preview theme-dark-preview">
+                                    <div class="preview-header"></div>
+                                    <div class="preview-content"></div>
+                                </div>
+                                <span class="d-block text-center mt-2">
+                                    <i class="bi bi-moon-fill me-1"></i>Dark
+                                </span>
+                            </label>
+                        </div>
+                        <div class="theme-option" data-theme="light">
+                            <input type="radio" name="theme" id="theme-light" value="light" class="d-none"
+                                   {% if theme == 'light' %}checked{% endif %}>
+                            <label for="theme-light" class="theme-label">
+                                <div class="theme-preview theme-light-preview">
+                                    <div class="preview-header"></div>
+                                    <div class="preview-content"></div>
+                                </div>
+                                <span class="d-block text-center mt-2">
+                                    <i class="bi bi-sun-fill me-1"></i>Light
+                                </span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Preferences Section -->
+    <div class="col-12 col-lg-6">
+        <div class="card settings-card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-sliders me-2"></i>Preferences
+                </h5>
+            </div>
+            <div class="card-body">
+                <!-- Auto Refresh -->
+                <div class="mb-4">
+                    <label class="form-label h6">Auto Refresh Interval</label>
+                    <div class="row g-2 align-items-center">
+                        <div class="col-auto">
+                            <div class="input-group" style="width: 140px;">
+                                <input type="number" class="form-control" 
+                                       id="refresh-interval" value="{{ settings.refresh_interval or 5 }}" min="1" max="60">
+                                <span class="input-group-text">sec</span>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <small class="text-muted">
+                                How often to refresh project status and system metrics
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Auto Start -->
+                <div class="mb-3">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="auto-start-enabled" 
+                               {% if settings.auto_start_projects %}checked{% endif %}>
+                        <label class="form-check-label" for="auto-start-enabled">
+                            <strong>Auto-start Auto Mode Projects</strong>
+                        </label>
+                    </div>
+                    <small class="text-muted d-block ms-4">
+                        Automatically start projects in Auto mode when the manager launches
+                    </small>
+                </div>
+                
+                <!-- Notifications -->
+                <div class="mb-3">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="show-notifications"
+                               {% if settings.show_notifications %}checked{% endif %}>
+                        <label class="form-check-label" for="show-notifications">
+                            <strong>Show Toast Notifications</strong>
+                        </label>
+                    </div>
+                    <small class="text-muted d-block ms-4">
+                        Show popup notifications for project start/stop events
+                    </small>
+                </div>
+                
+                <!-- Minimize Logging -->
+                <div class="mb-3">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="minimize-logging"
+                               {% if settings.minimize_logging %}checked{% endif %}>
+                        <label class="form-check-label" for="minimize-logging">
+                            <strong>Minimize Console Logging</strong>
+                        </label>
+                    </div>
+                    <small class="text-muted d-block ms-4">
+                        Reduce console output to only show errors and important events
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Windows Startup Section -->
+    <div class="col-12 col-lg-6">
+        <div class="card settings-card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-microsoft me-2"></i>Windows Startup
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">
+                    Configure the Project Manager to start automatically when Windows boots.
+                </p>
+                
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle-fill me-2"></i>
+                    <strong>Setup Instructions:</strong>
+                    <ol class="mb-0 mt-2 ps-3">
+                        <li>Run the PowerShell script <code>install_startup_task.ps1</code> as Administrator</li>
+                        <li>Or manually add a shortcut to <code>run_manager.bat</code> to your Startup folder</li>
+                        <li>The manager will start on Windows login</li>
+                    </ol>
+                </div>
+                
+                <div class="row g-3 mt-2">
+                    <div class="col-md-6">
+                        <div class="card bg-transparent border">
+                            <div class="card-body p-3">
+                                <h6 class="card-title fs-6">
+                                    <i class="bi bi-file-earmark-code me-2"></i>Startup Script
+                                </h6>
+                                <p class="card-text small text-muted mb-2">
+                                    Creates a scheduled task for auto-start.
+                                </p>
+                                <code class="d-block p-2 rounded small" style="background: var(--bg-darker);">install_startup_task.ps1</code>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card bg-transparent border">
+                            <div class="card-body p-3">
+                                <h6 class="card-title fs-6">
+                                    <i class="bi bi-terminal me-2"></i>Manual Start
+                                </h6>
+                                <p class="card-text small text-muted mb-2">
+                                    Run to start the manager manually.
+                                </p>
+                                <code class="d-block p-2 rounded small" style="background: var(--bg-darker);">run_manager.bat</code>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- API Information Section -->
+    <div class="col-12 col-lg-6">
+        <div class="card settings-card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-plug-fill me-2"></i>API Information
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">
+                    REST API for external control (e.g., OpenClaw integration).
+                </p>
+                
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Endpoint</th>
+                                <th>Method</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>/api/projects</code></td>
+                                <td>GET/POST</td>
+                                <td>List/Create projects</td>
+                            </tr>
+                            <tr>
+                                <td><code>/api/projects/&lt;id&gt;/start</code></td>
+                                <td>POST</td>
+                                <td>Start project</td>
+                            </tr>
+                            <tr>
+                                <td><code>/api/projects/&lt;id&gt;/stop</code></td>
+                                <td>POST</td>
+                                <td>Stop project</td>
+                            </tr>
+                            <tr>
+                                <td><code>/api/projects/&lt;id&gt;/toggle-mode</code></td>
+                                <td>POST</td>
+                                <td>Toggle auto/manual</td>
+                            </tr>
+                            <tr>
+                                <td><code>/api/system/summary</code></td>
+                                <td>GET</td>
+                                <td>System summary</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="alert alert-secondary d-flex align-items-center justify-content-between">
+                    <div>
+                        <strong>Base URL:</strong> <code id="api-base-url">http://localhost:8787</code>
+                    </div>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="copyApiUrl()">
+                        <i class="bi bi-clipboard"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- About Section -->
+    <div class="col-12">
+        <div class="card settings-card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-info-circle-fill me-2"></i>About
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <div class="bg-primary rounded p-3">
+                            <i class="bi bi-kanban-fill fs-2 text-white"></i>
+                        </div>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h5 class="mb-1">Project Control Dashboard</h5>
+                        <p class="text-muted mb-1">Version 2.1</p>
+                        <p class="small text-muted mb-0">
+                            A production-ready project manager with multi-service support, 
+                            theme management, and comprehensive monitoring.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function copyApiUrl() {
+    const url = document.getElementById('api-base-url').textContent;
+    navigator.clipboard.writeText(url).then(() => {
+        if (typeof showToast === 'function') {
+            showToast('API URL copied to clipboard', 'success');
+        }
+    });
+}
+
+// Theme selection
+document.querySelectorAll('.theme-option').forEach(option => {
+    option.addEventListener('click', function() {
+        const theme = this.dataset.theme;
+        document.querySelectorAll('input[name="theme"]').forEach(r => r.checked = false);
+        document.getElementById(`theme-${theme}`).checked = true;
+        
+        // Save theme
+        fetch('/api/settings/theme', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ theme })
+        }).then(() => {
+            // Apply theme immediately
+            document.documentElement.setAttribute('data-theme', theme);
+            document.body.className = `theme-${theme}`;
+            if (typeof showToast === 'function') {
+                showToast('Theme updated', 'success');
+            }
+        });
+    });
+});
+
+// Save settings
+document.getElementById('refresh-interval')?.addEventListener('change', saveSettings);
+document.getElementById('auto-start-enabled')?.addEventListener('change', saveSettings);
+document.getElementById('show-notifications')?.addEventListener('change', saveSettings);
+document.getElementById('minimize-logging')?.addEventListener('change', saveSettings);
+
+function saveSettings() {
+    const settings = {
+        refresh_interval: parseInt(document.getElementById('refresh-interval').value) || 5,
+        auto_start_projects: document.getElementById('auto-start-enabled').checked,
+        show_notifications: document.getElementById('show-notifications').checked,
+        minimize_logging: document.getElementById('minimize-logging').checked
+    };
+    
+    fetch('/api/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(settings)
+    }).then(() => {
+        if (typeof showToast === 'function') {
+            showToast('Settings saved', 'success');
+        }
+    });
+}
+
+// Update API base URL
+window.addEventListener('load', function() {
+    document.getElementById('api-base-url').textContent = window.location.origin;
+});
+</script>
+{% endblock %}
