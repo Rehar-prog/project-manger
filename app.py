@@ -5,6 +5,8 @@ multi-service support, and theme management.
 """
 import os
 import sys
+import argparse
+import webbrowser
 from datetime import datetime
 from flask import Flask, request, jsonify, render_template, render_template_string
 
@@ -886,8 +888,81 @@ def handle_exception(error):
 # MAIN
 # =============================================================================
 
+def open_browser_delayed(url, delay=2.0):
+    """Open browser after a delay to ensure server is ready."""
+    import threading
+    import time
+    
+    def open_browser():
+        time.sleep(delay)
+        try:
+            webbrowser.open(url)
+        except Exception as e:
+            print(f"Warning: Could not open browser: {e}")
+    
+    thread = threading.Thread(target=open_browser, daemon=True)
+    thread.start()
+
+
+def show_error_dialog(message, title="Error"):
+    """Show native error dialog when Flask fails to start."""
+    import platform
+    
+    system = platform.system()
+    
+    if system == "Windows":
+        try:
+            import ctypes
+            ctypes.windll.user32.MessageBoxW(0, message, title, 0x10)  # 0x10 = Error icon
+        except Exception:
+            pass
+    elif system == "Darwin":  # macOS
+        try:
+            import subprocess
+            script = f'display dialog "{message}" with title "{title}" buttons {{"OK"}} default button "OK" with icon stop'
+            subprocess.run(["osascript", "-e", script], capture_output=True)
+        except Exception:
+            pass
+    else:  # Linux
+        try:
+            import tkinter.messagebox
+            import tkinter
+            root = tkinter.Tk()
+            root.withdraw()
+            tkinter.messagebox.showerror(title, message)
+            root.destroy()
+        except Exception:
+            pass
+    
+    # Always print to stderr as fallback
+    print(f"\n{title}: {message}\n", file=sys.stderr)
+
+
 if __name__ == "__main__":
-    init_app()
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(description='Project Control Dashboard')
+    parser.add_argument('--server-only', action='store_true', 
+                        help='Run server without opening browser')
+    parser.add_argument('--version', action='store_true',
+                        help='Show version information')
+    args = parser.parse_args()
+    
+    # Show version if requested
+    if args.version:
+        try:
+            from version import __version__, __app_name__
+            print(f"{__app_name__} v{__version__}")
+        except ImportError:
+            print("Project Manager v2.1.0")
+        sys.exit(0)
+    
+    # Initialize application
+    try:
+        init_app()
+    except Exception as e:
+        show_error_dialog(f"Failed to initialize application:\n{str(e)}", 
+                         "Initialization Error")
+        sys.exit(1)
     
     print("\n" + "="*60)
     print("  Project Control Dashboard")
@@ -896,8 +971,19 @@ if __name__ == "__main__":
     print("  Press Ctrl+C to stop")
     print("="*60 + "\n")
     
+    # Open browser automatically (only when frozen/packaged and not --server-only)
+    if not args.server_only and getattr(sys, 'frozen', False):
+        open_browser_delayed("http://localhost:8787", delay=2.0)
+        print("  Opening browser...\n")
+    
+    # Start Flask server
     try:
-        app.run(host="0.0.0.0", port=8787, debug=False)
+        app.run(host="0.0.0.0", port=8787, debug=False, use_reloader=False)
+    except Exception as e:
+        show_error_dialog(f"Failed to start server:\n{str(e)}\n\n"
+                         "Port 8787 may be in use by another application.",
+                         "Server Error")
+        sys.exit(1)
     finally:
         if health_monitor:
             try:

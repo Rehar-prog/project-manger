@@ -1,0 +1,25 @@
+# actual user data 
+projects.json
+settings.json
+
+# Generated during build
+version_info.txt
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
+
+# Python bytecode
+__pycache__/
+*.py[cod]
+*.so
+
+# Virtual environments
+venv/
+env/
+.venv/
+
+# OS files
+.DS_Store
+Thumbs.db

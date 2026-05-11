@@ -1,7 +1,0 @@
-{
-  "theme": "light",
-  "refresh_interval": 5,
-  "auto_start_projects": true,
-  "minimize_logging": false,
-  "show_notifications": true
-}

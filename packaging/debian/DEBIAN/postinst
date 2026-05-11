@@ -1,0 +1,38 @@
+#!/bin/bash
+set -e
+
+# Project Manager post-installation script
+
+# Create user data directory
+mkdir -p "$HOME/.local/share/projectmanager"
+mkdir -p "$HOME/.config/projectmanager"
+
+# Set up default data files if they don't exist
+if [ ! -f "$HOME/.local/share/projectmanager/projects.json" ]; then
+    echo '[]' > "$HOME/.local/share/projectmanager/projects.json"
+fi
+
+if [ ! -f "$HOME/.config/projectmanager/settings.json" ]; then
+    cat > "$HOME/.config/projectmanager/settings.json" << 'EOF'
+{
+    "theme": "dark",
+    "refresh_interval": 5,
+    "auto_start_projects": false,
+    "show_notifications": true,
+    "minimize_logging": false
+}
+EOF
+fi
+
+# Update desktop database
+if command -v update-desktop-database >/dev/null 2>&1; then
+    update-desktop-database /usr/share/applications
+fi
+
+# Update icon cache
+if command -v gtk-update-icon-cache >/dev/null 2>&1; then
+    gtk-update-icon-cache -f /usr/share/icons/hicolor
+fi
+
+echo "Project Manager has been installed successfully!"
+echo "Run 'projectmanager' from the terminal or find it in your applications menu."

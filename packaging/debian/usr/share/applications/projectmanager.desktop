@@ -1,0 +1,25 @@
+[Desktop Entry]
+Name=Project Manager
+Comment=Production-ready project manager with multi-service support
+Exec=/usr/bin/projectmanager
+Icon=projectmanager
+Type=Application
+Categories=System;Monitor;Development;
+Keywords=project;manager;monitor;process;dashboard;
+Terminal=false
+StartupNotify=true
+StartupWMClass=ProjectManager
+MimeType=application/x-projectmanager;
+Actions=StartServer;StopServer;
+
+[Desktop Action StartServer]
+Name=Start Server
+Exec=/usr/bin/projectmanager --server-only
+
+[Desktop Action StopServer]
+Name=Stop Server
+Exec=/usr/bin/projectmanager --stop
+
+[Desktop Action Dashboard]
+Name=Open Dashboard
+Exec=/usr/bin/projectmanager --open-dashboard

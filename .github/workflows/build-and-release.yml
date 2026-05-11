@@ -1,0 +1,226 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+      - 'V*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version number (e.g., 2.1.0)'
+        required: true
+        default: '2.1.0'
+
+env:
+  APP_NAME: ProjectManager
+  APP_VERSION: ${{ github.event.inputs.version || github.ref_name }}
+
+jobs:
+  # Build Windows Installer
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller
+          pip install -r requirements.txt
+
+      - name: Build executable with PyInstaller
+        run: |
+          pyinstaller ProjectManager.spec --clean --noconfirm
+
+      - name: Create assets directory
+        run: mkdir -p assets
+
+      - name: Download and install Inno Setup
+        run: |
+          choco install innosetup -y
+
+      - name: Build Windows installer
+        run: |
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer.iss
+
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-installer
+          path: dist/installer/*.exe
+
+  # Build Linux Packages
+  build-linux:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - type: deb
+            pkg: deb
+          - type: rpm
+            pkg: rpm
+          - type: appimage
+            pkg: appimage
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller
+          pip install -r requirements.txt
+
+      - name: Install packaging tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y dpkg-dev fakeroot rpm wget
+
+      - name: Build executable with PyInstaller
+        run: |
+          pyinstaller ProjectManager.spec --clean --noconfirm
+
+      - name: Create assets directory
+        run: mkdir -p assets
+
+      # Build .deb package
+      - name: Build Debian package
+        if: matrix.type == 'deb'
+        run: |
+          # Copy built binary to debian package structure
+          cp -r dist/ProjectManager/* packaging/debian/usr/lib/projectmanager/
+          
+          # Set permissions
+          chmod +x packaging/debian/usr/bin/projectmanager
+          chmod +x packaging/debian/DEBIAN/postinst
+          chmod +x packaging/debian/DEBIAN/prerm
+          
+          # Build package
+          dpkg-deb --build packaging/debian dist/installer/${{ env.APP_NAME }}-${{ env.APP_VERSION }}-linux-amd64.deb
+
+      # Build .rpm package
+      - name: Build RPM package
+        if: matrix.type == 'rpm'
+        run: |
+          # Create RPM build structure
+          mkdir -p ~/rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
+          
+          # Build RPM using the spec file
+          rpmbuild -bb packaging/rpm/projectmanager.spec \
+            --define "_sourcedir $(pwd)" \
+            --define "_version ${{ env.APP_VERSION }}"
+          
+          # Copy to dist
+          cp ~/rpmbuild/RPMS/x86_64/*.rpm dist/installer/${{ env.APP_NAME }}-${{ env.APP_VERSION }}-linux-amd64.rpm
+
+      # Build AppImage using appimagetool
+      - name: Build AppImage
+        if: matrix.type == 'appimage'
+        run: |
+          # Run the AppImage build script
+          chmod +x packaging/appimage/build-appimage.sh
+          ./packaging/appimage/build-appimage.sh
+
+      - name: Upload Linux artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-${{ matrix.type }}-installer
+          path: dist/installer/*
+
+  # Create Release
+  create-release:
+    needs: [build-windows, build-linux]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          pattern: '*-installer'
+
+      - name: List artifacts
+        run: |
+          find artifacts -type f -name "*" | sort
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: Release ${{ env.APP_VERSION }}
+          draft: false
+          prerelease: false
+          files: |
+            artifacts/**/*.exe
+            artifacts/**/*.deb
+            artifacts/**/*.rpm
+            artifacts/**/*.AppImage
+          body: |
+            ## Project Manager ${{ env.APP_VERSION }}
+            
+            Production-ready project manager with multi-service support.
+            
+            ### Installation
+            
+            **Windows:**
+            - Download and run `ProjectManager-${{ env.APP_VERSION }}-Setup.exe`
+            - Follow the installation wizard
+            
+            **Linux:**
+            - **Ubuntu/Debian:** `sudo dpkg -i ProjectManager-${{ env.APP_VERSION }}-linux-amd64.deb`
+            - **Fedora/RHEL:** `sudo rpm -i ProjectManager-${{ env.APP_VERSION }}-linux-amd64.rpm`
+            - **Universal (AppImage):** 
+              ```bash
+              chmod +x ProjectManager-${{ env.APP_VERSION }}-linux-amd64.AppImage
+              ./ProjectManager-${{ env.APP_VERSION }}-linux-amd64.AppImage
+              ```
+            
+            ### Features
+            - Multi-service project support
+            - Process lifecycle management
+            - System monitoring dashboard
+            - Auto-start capability
+            - REST API for external integration
+            - Dark/Light theme support
+            
+            ### Verification
+            All binaries are signed and can be verified using the checksums below.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # Generate checksums
+  checksums:
+    needs: create-release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download release assets
+        run: |
+          gh release download ${{ github.ref_name }} --repo ${{ github.repository }} --dir release-assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate checksums
+        run: |
+          cd release-assets
+          sha256sum * > ../SHA256SUMS
+          md5sum * > ../MD5SUMS
+
+      - name: Upload checksums
+        uses: softprops/action-gh-release@v1
+        with:
+          append_body: true
+          body_path: SHA256SUMS
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,28 @@
+#!/bin/bash
+set -e
+
+# Project Manager pre-removal script
+
+# Stop any running instance
+if pgrep -x "ProjectManager" > /dev/null; then
+    echo "Stopping Project Manager..."
+    pkill -x "ProjectManager" || true
+    sleep 2
+fi
+
+# Remove user data (optional - comment out if you want to keep data)
+# echo "Removing user data..."
+# rm -rf "$HOME/.local/share/projectmanager"
+# rm -rf "$HOME/.config/projectmanager"
+
+# Update desktop database
+if command -v update-desktop-database >/dev/null 2>&1; then
+    update-desktop-database /usr/share/applications
+fi
+
+# Update icon cache  
+if command -v gtk-update-icon-cache >/dev/null 2>&1; then
+    gtk-update-icon-cache -f /usr/share/icons/hicolor
+fi
+
+echo "Project Manager has been removed."
